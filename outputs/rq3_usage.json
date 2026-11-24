@@ -1,0 +1,9 @@
+{
+  "note": "Event-frequency proxy; the original paper requires manual coding of task purposes",
+  "event_counts": {
+    "gpt not assistance::commented": 2,
+    "gpt not assistance::pulled": 1,
+    "gpt not assistance::nan": 1
+  },
+  "n_events": 4
+}

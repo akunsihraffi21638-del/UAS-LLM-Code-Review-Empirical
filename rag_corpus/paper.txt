@@ -1,0 +1,1551 @@
+arXiv:2508.11034v1 [cs.SE] 14 Aug 2025   The Impact of Large Language Models (LLMs) on
+                                                            Code Review Process
+
+                                        Antonio Collantea,, Samuel Abedua, SayedHassan Khatoonabadia, Ahmad
+                                                              Abdellatifb, Ebube Alora, Emad Shihaba
+
+                                                 aConcordia University, 2155 Guy St, Montreal, H3H 2L9, Quebec, Canada
+                                         bUniversity of Calgary, 2500 University Dr NW, Calgary, T2N 1N4, Alberta, Canada
+
+                                        Abstract
+
+                                        [Context:] Large language models (LLMs) have recently gained prominence in
+                                        the field of software development, significantly boosting productivity and sim-
+                                        plifying teamwork. Although prior studies have examined task-specific appli-
+                                        cations, the phase-specific effects of LLM assistance on the efficiency of code
+                                        review processes remain underexplored. [Objectives:] This research investigates
+                                        the effect of GPT on GitHub pull request (PR) workflows, with a focus on
+                                        reducing resolution time, optimizing phase-specific performance, and assisting
+                                        developers. [Methods:] We curated a dataset of 25,473 PRs from 9,254 GitHub
+                                        projects and identified GPT-assisted PRs using a semi-automated heuristic ap-
+                                        proach that combines keyword-based detection, regular expression filtering, and
+                                        manual verification until achieving 95% labeling accuracy. We then applied
+                                        statistical modeling, including multiple linear regression and Mann-Whitney U
+                                        test, to evaluate differences between GPT-assisted and non-assisted PRs, both
+                                        at the overall resolution level and across distinct review phases. [Results:] Our
+                                        research has revealed that early adoption of GPT can substantially boost the
+                                        effectiveness of the PR process, leading to considerable time savings at various
+                                        stages. Our findings suggest that GPT-assisted PRs reduced median resolution
+                                        time by more than 60% (9 hours compared to 23 hours for non-assisted PRs).
+                                        We discovered that utilizing GPT can reduce the review time by 33%, and the
+                                        waiting time before acceptance by 87%. Analyzing a sample dataset of 300
+                                        GPT-assisted PRs, we discovered that developers predominantly use GPT for
+                                        code optimization (60%), bug fixing (26%), and documentation updates (12%).
+                                        [Conclusion:] Our findings highlight the potential of GPT to accelerate code re-
+                                        views, improve code quality, and address persistent bottlenecks. This research
+                                        sheds light on the impact of the GPT model on the code review process, of-
+
+                                            Corresponding author
+                                             Email addresses: antonio.collante@mail.concordia.ca (Antonio Collante),
+
+                                        samuel.abedu@mail.concordia.ca (Samuel Abedu),
+                                        sayedhassan.khatoonabadi@concordia.ca (SayedHassan Khatoonabadi),
+                                        ahmad.abdellatif@ucalgary.ca (Ahmad Abdellatif), ebubechukwu.alor@mail.concordia.ca
+                                        (Ebube Alor), emad.shihab@concordia.ca (Emad Shihab)
+
+                                        Preprint submitted to Information and Software Technology  August 18, 2025
+fering actionable insights for software teams seeking to enhance workflows and
+promote seamless collaboration.
+
+Keywords: LLMs, GPT, AI assistance, pull requests, pull request phases,
+code review process, developer productivity.
+
+1. Introduction
+
+    Modern software development is heavily based on collaborative workflows,
+with Pull Requests (PR) serving as a central mechanism to integrate code
+changes [1, 2, 3]. A PR goes through multiple phases, including submission,
+review, change, and merging, each requiring coordination between contributors
+and reviewers [1]. Effective PR management is crucial to maintaining software
+quality, but it remains a bottleneck in many projects due to long review times,
+inconsistent feedback, and inefficient communication [4]. Developers often expe-
+rience delays due to unclear review comments, excessive revisions, and prolonged
+waiting times before changes are accepted [5].
+
+    Inefficiencies in the software development cycle, such as long review times,
+can lead to frustration among team members, decreased productivity, and even
+project delays [6]. As codebases become increasingly intricate, there is a growing
+need for sophisticated automation tools to facilitate the code review process and
+improve collaboration and teamwork [7]. In parallel, LLMs, such as Generative
+Pre-trained Transformers (GPTs) [8] have rapidly evolved, demonstrating strong
+capabilities in code generation, bug detection, and documentation assistance
+[9, 10]. These models are capable of suggesting enhancements to existing code,
+resolving unclear logical structures, and automating repetitive tasks, thereby
+becoming indispensable tools for software engineers.
+
+    Despite the increasing adoption of LLM-powered tools in development work-
+flows, a systematic investigation into their impact on PR processes is lacking.
+Previous research on the use of LLM in the PR context [9, 11, 12, 13] has focused
+mainly on task-specific applications, such as commit message generation [14] and
+documentation support [15], while neglecting to explore their phase-specific im-
+pact across the entire PR lifecycle. Furthermore, while LLM-generated sugges-
+tions can be beneficial, it is necessary to quantify their effectiveness in improving
+review speed and reducing PR merge time.
+
+    This study aims to fill this knowledge gap by empirically evaluating the
+impact of GPT on code review waiting times, with a particular focus on phase-
+specific effects. It examines their influence on resolution time, their role in dif-
+ferent PR phases, and the reasons why contributors and reviewers adopt GPT as
+assistance. Given the proven effectiveness of GPT on a wide range of software
+engineering tasks, including code generation, debugging, and documentation,
+understanding how and to what extent GPT enhances the effectiveness of PRs
+in each phase is crucial to assess their usefulness in real-world operations. These
+insights can guide the design of more efficient GPT-supported code review work-
+flows and inform best practices for integrating AI assistance into collaborative
+software development.
+
+                                                   2
+    Toward this goal, we examine the PRs that software developers actively
+engaged with GPT to seek recommendations for code review tasks or problem-
+solving. We refer to these as GPT-assisted PRs throughout the paper. In
+contrast, GPT non-assisted PRs are those where developers either do not
+use GPT at all or use it strictly for implementation tasks (i.e., making an API
+call to a GPT model), without relying on it for code review insights or decision
+making. Our research investigates how GPT-assisted PRs influence the duration
+and quality of the code review process. For this purpose, we start by curating
+a dataset of 25,473 PRs from 9,254 projects on GitHub. Next, we extract
+six features (project age, no commits, files added, files deleted, files changed,
+time to merge) to characterize projects, PRs, and code reviews. We then ana-
+lyze how these factors influence the review and resolution times [16]. Finally, we
+also investigate which development tasks involve the use of GPT-assisted PRs
+throughout the PR phases, aiming to identify where such assistance is most
+effectively integrated. In summary, our aim is to answer the following three
+research questions:
+
+RQ1:  Does GPT-assistance during the PR process reduce the resolu-
+      tion time? We aim to understand the potential of LLMs to expedite
+      the resolution of PRs in the code review process. Specifically, we analyze
+      their impact on the total time required to resolve a PR, from its submis-
+      sion to completion. Our results suggest a correlation between the use of
+      GPT-assisted PRs and a decrease in merge time approximately from 23 to
+      9 hours.
+
+RQ2:  How does GPT assistance impact various phases of the PR pro-
+      cess? We aim to further explore the effect of GPT in various phases of
+      the PR process, such as submission, evaluation, modification, and waiting
+      time, to determine where its support is most advantageous. Our analysis
+      shows that GPT-assisted PRs complete faster across key phases of the re-
+      view process. Specifically, they take 1 hour at the Review phase, 3 hours
+      at Waiting for Changes, and 1 hour at Change, compared to 3 hours, 24
+      hours, and 1 hour, respectively, for non-assisted PRs. These results high-
+      light the potential of GPT to streamline the PR workflow, especially by
+      reducing waiting times.
+
+RQ3:  Why do contributors and reviewers use GPT during the PR
+      process? We aim to better understand how programmers use GPT to
+      enhance code quality, fix errors, and improve documentation. By analyz-
+      ing these application patterns, we uncover how developers integrate this
+      technology into their daily workflows, highlighting its most potential ben-
+      efits. Our findings show that developers devote a significant part of their
+      review time to refining and correcting the source code. Specifically, 60.26%
+      of enhancement tasks occur during the Review phase, 42.31% during Wait-
+      ing for Changes, and 35.90% during the Change phase. This explains the
+      role of GPT as assistance in enhancing efficiency for those time-consuming
+      activities.
+
+      3
+    Finally, our research provides recommendations for software developers, both
+maintainers and contributors, as well as researchers, aimed at optimizing and ac-
+celerating the PR review process. We argue that applying the GPT recommen-
+dations as a support tool can strengthen collaboration by allowing participants
+to better anticipate and resolve potential issues.
+
+Our Contributions. In summary, we make the following contributions in this
+paper:
+
+    · To the best of our knowledge, this is the first comprehensive analysis that
+       examines the effectiveness of GPT during the PR review phases.
+
+    · We present empirical evidence on the impact of GPT on PR-based devel-
+       opment phases and identify the types of software development activities
+       where it is used the most frequently.
+
+    · To promote the reproducibility of our study and facilitate future research
+       on this topic, we publicly share our scripts and dataset online at https:
+       //github.com/acollant/GPT-Assistance-PR.
+
+Paper Organization. The remainder of the paper is organized as follows. We
+review related work in Section 2 and describe our study setup and dataset in
+Section 3. We report our approach and findings for each research question in
+Section 4 and discuss the implications of our findings in Section 5. Finally, we
+describe the limitations of our study in Section 6 and conclude the paper in
+Section 7.
+
+2. Related Work
+
+    In the following, we first review research on the challenges in code reviews
+and collaboration before moving on to an overview of factors affecting PR life-
+time and latency. Finally, we review studies on the application of LLMs in code
+reviews.
+
+Challenges in Modern Code Reviews (MCR) and Collaboration. Code
+reviews are a critical aspect of modern software development, ensuring code
+quality, maintainability, and adherence to best practices. However, the process
+comes with several challenges that can affect efficiency, collaboration, and over-
+all development workflow. For example, long waiting times where PRs often
+remain unreviewed for extended periods, slowing down development. Kudr-
+javets et al. [5] reported that between 29% and 63% of the overall code review
+lifetime is spent waiting for the accepted changes to merge. Bacchelli and Bird
+[3] reveal that scheduling and time issues also appeared challenging; yet, under-
+standing the code and comments takes most of the review time. According to
+these authors, code reviews tend to be less focused on detecting defects than ex-
+pected and, instead, provide additional advantages, such as knowledge transfer,
+increased team awareness, and creation of alternative solutions to problems.
+Davila and Nunes [17] also reported that reviewers have found it difficult to
+
+                                                   4
+understand the code, which prompts the need for enhancements in visualizing
+code changes to facilitate understanding. However, a recent study has shown
+that ChatGPT is an alternative to generating some kind of explanations during
+MCR [18]. Davila et al. [15] identified five challenges to adopting generative AI
+in MCR: trustworthiness, lack of context, misleading review comments, security
+and privacy, and token limits. Although prior studies have explored aspects of the
+use of GPT in software development, they do not provide a systematic analysis
+of its impact on waiting times and efficiency in all phases of the PR workflow.
+Our study addresses this gap by focusing on its influence during specific code
+review phases.
+
+Factors Affecting PR Lifetime and Latency. Studying the factors that
+influence PR latency is crucial for improving software development efficiency,
+collaboration, and overall code quality. Understanding what causes delays in
+PR review and merging can lead to optimizations that benefit both developers
+and organizations [4], [19], [16], [20], and [21]. Zhang et al. [4] identified that the
+number of commits at open time is negatively correlated with PR merging but
+shifts to a positive correlation at close time. Rose [19] built a Multiple Linear
+Regression Model (MLR) that indicates that the PR size has a statistically
+significant effect on the review time, as the positive value of the regression
+coefficient implies that as the PR size increases, the review time for PRs also
+increases. Moreira Soares et al. [16] further emphasized that PRs possess some
+structural characteristics, such as the number of modified files, the number of
+commits, and the number of changed lines of code. Moreira Soares et al. [16]
+concluded that the combination of structural characteristics may increase the
+chances of PRs having a very short and long lifetime.
+
+    Although prior research explores factors affecting PR latency (e.g., size, num-
+ber of commits), there is limited research into how GPT can have an effect on
+PR resolution time. Khatoonabadi et al. [20] developed a machine learning
+model to predict the latency of the initial responses of the maintainers and con-
+tributors after receiving the first feedback from the maintainer. These authors
+highlighted that the timing of submissions and feedback are factors that have a
+significant influence on response waiting times. Their approach, which provides
+estimated waiting times, helps open-source projects collaborate better by allow-
+ing maintainers and contributors to anticipate and address potential delays in
+PR reviews. This study complements the aforementioned work by offering em-
+pirical insights into GPT usage beyond commit messages, specifically examining
+detailed time reductions in key phases such as review and change.
+
+The Application of LLMs in Code Reviews. LLM-powered tools can offer
+services designed to streamline various code review-related development tasks.
+Research has been conducted on the impact of AI-driven generative tools in this
+context [9], [14], [15], [13], [22], [23], [24], [25]. For instance, Davila et al. [15]
+conducted a literature review on the application of AI-based generative tools
+in a code review context and highlighted that AI-based tools can positively
+impact code review efficiency by reducing reviewer workload and review duration
+and increasing the likelihood of acceptance in GitHub projects. Xiao et al.
+
+                                                   5
+Applied on May 9, 2024                            Searching Potential GPT-Assisted PRs
+
+Search for GPT keyword  Filter out projects having  Filter out PRs having GPT         Download PRs from          25 473
+   on GitHub using the       stars >= 10 and             in at least 1 event        GitHub using the GitHub  PR using GPT
+         GitHub API          participants >= 2
+                                                                                                 API
+          81 234 PRs            26 424 PRs
+
+                                                    Identifying GPT-assisted PRs
+
+Get a random sample of  Identify GPT-Assisted       Label the sample PRs as GPT-    Apply heuristics on      Label automatically GPT-  Manual Inspection
+             PRs        PRs by 3 annotators         assisted or GPT-non-assisted      the 25 473 PRs           assisted or GPT-non-     for True Positive
+                                                                                                                        assisted
+                                                           using the heuristics
+                                                                                                                      2 894 PRs
+Sample of 150 PR        Creation of 4 Heuristics    Until getting 90 % of accurary
+
+Mapping GPT-Assisted to PR Phases                   Investigating the implication GPT-Assisted within PR Phases
+
+      1600              Label GPT Events as                                                RQ1. Impact the GPT as assistance on PR
+     GPT as                     phases                                                                      Resolution Phase
+Assistance PRs
+
+                                                    Find similar PRs using              RQ2. Impact the GPT as assistance on each
+                                                     Manhattan Distance                                        PR Phase
+
+     23 873             Label non-GPT Events
+  GPT as Non                    as phases
+Assistance PRs
+                                                                                                         RQ3. How GPT is used at each PR Phase
+
+Figure 1: An overview of our study setup that describes a semi-automated approach for
+identifying, detecting, and mapping GPT-assisted PRs to the phases in which GPT is used
+
+[14] observed that PRs assisted by Copilot have a 1.57 times higher likelihood
+of being merged compared to those not assisted by Copilot for PR. Tufano
+et al. [9] reported how developers use ChatGPT to automatically generate a
+commit message and a PR/issue description. Rasheed et al. [13] highlighted the
+potential of LLM-powered AI agents to considerably improve conventional code
+review procedures. These agents provide a twofold advantage: they enhance
+code quality and improve developer learning.
+
+    Vijayvergiya et al. [22] shared the experience in developing, implementing,
+and evaluation AutoCommenter, a LLM-powered code review tool that enforces
+coding best practices and has a positive impact on the developer's workflow. Yu
+et al. [23] proposed Carllm (Comprehensibility of Automated Code Review us-
+ing LLMs) that improves the comprehensibility of automated code review. Hao
+et al. [24] studied the role of ChatGPT in collaborative coding by analyzing
+the shared conversation between developers and ChatGPT in GitHub PRs and
+issues, finding that the most frequent requests involve code generation, concep-
+tual understanding, how-to guidance, issue resolution, and code review. Studies
+on GPT have examined particular tasks (e.g., code generation, commit message
+generation, or bug fixing) but lack a holistic view of its phase-specific impacts
+during the PR life cycle. Our research fills this void by examining the use and
+impact of GPT on specific phases, including the review process and the waiting
+period.
+
+                                                    6
+3. Study Setup
+
+    In this paper, we investigate the impact of using GPT as an assistant tool
+in the PR code review process. Specifically, we examine how GPT influences
+the overall PR resolution time and how its effects vary between different phases
+of the review workflow. We also aim to identify the types of review tasks for
+which developers actively seek GPT support. Figure 1 presents an overview of
+our study design. We begin with an automated procedure to identify potential
+GPT-assisted PRs, followed by a semi-automated verification step to confirm
+the actual use of GPT during the review. Finally, we map the verified GPT-
+assisted PRs to their corresponding review phases. The remainder of this section
+provides a detailed explanation of each step in our methodology.
+
+3.1. Searching Potential GPT-assisted PRs
+    To identify relevant PRs for our analysis, we rely on GitHub, which adopts
+
+a PR-based approach to submit, review, and merge code contributions [17]. We
+use the GitHub REST API [26] to retrieve a broad set of candidate PRs in
+which the assistant of a GPT model could have been used during the review
+process.
+
+3.1.1. Searching
+    Following a similar strategy to that of Tufano et al. [9], we conduct keyword-
+
+based searches for mentions of "GPT" in four main PR fields.
+
+    Project Name: Although some GPT-focused projects may not actually
+       use GPT for PR reviews, we still record these mentions before filtering
+       out irrelevant cases [27].
+
+    PR Title: The use of GPT may be evident in the PR title (e.g., refactored
+       using GPT suggestions [28]).
+
+    Body+Comments: A PR description and/or comments can refer to
+       GPT explicitly (e.g., code generated by GPT [29]).
+
+    File(s) Name: References in filenames (e.g., chatgpt review.md [30]) can
+       indicate GPT-generated artifacts.
+
+3.1.2. Filtering
+    To avoid projects with minimal activity or that lack meaningful collabora-
+
+tion, we keep only projects that meet the following criteria: (1) the repository of
+the PR has at least 10 stars [31], to remove toys or trivial projects. (2) at least
+two contributors are involved in the review process, to exclude self-reviewed
+PRs.
+
+                                                   7
+3.1.3. Downloading
+    Based on the aforementioned criteria, a total of 25,473 pull requests were
+
+collected from 9,254 repositories on May 9, 2024. For each PR, we extracted
+detailed metadata, including the associated project name, URL, PR number
+and title, event history, contributor information, creation date, comments, and
+the set of modified files.
+
+3.2. Identifying GPT-assisted PRs
+    In this semi-automated step, our goal is to define the heuristics that indicate
+
+the use of GPT to classify PRs as GPT-assisted or GPT-non-assisted. By doing
+this, we exclude false positives (i.e., PRs that mentioned GPT as discussed in
+Section 3.1 but did not use the GPT model to assist in the code review process).
+This step ensures that the PRs used for our analysis are PRs where GPT models
+are used in the code review process, rather than just being part of the project
+code.
+
+3.2.1. Random Samples
+    With the goal of discovering patterns related to the use of GPT in PRs, we
+
+randomly sampled a total of 450 GitHub PRs to examine indicators of GPT
+assistance in code review activities. Three authors independently inspected 150
+unique PRs in three separate rounds, analyzing project names, PR titles, mod-
+ified files, and PR bodies. In Round 1, we reviewed the first set of 150 PRs
+and cross-validated our observations to ensure that the identified patterns con-
+sistently reflected GPT-assisted contributions. In Rounds 2 and 3, we applied
+the same procedure to two additional sets of 150 PRs each. After each round,
+the reviewers met to consolidate recurring patterns, clarify ambiguous cases,
+and resolve classification disagreements through discussion until consensus was
+reached. The findings of Round 1 are presented in Table 1. In particular, most
+PRs were ultimately classified as GPT-non-assisted, as GPT was often inte-
+grated into the software (e.g., through GPT APIs) but not explicitly used to
+support the code review itself.
+
+3.2.2. Defining Heuristics
+    We defined four heuristics to analyze and label the presence of GPT-assisted
+
+PRs, as outlined in Table 2. These heuristics are reinforced by a regular
+expression-based technique (detailed in the appendix), which automatically clas-
+sifies the collected PR instances as either GPT-assisted or GPT-non-assisted
+based on the identified patterns: H1: Project name, H2: PR title, H3: Modi-
+fied files, H4: PR body+comments.
+
+3.2.3. Applying Heuristics
+    In the initial phase of our analysis, we experimented with various sizes of
+
+n-gram to determine which configurations offered the most valuable insights
+for detecting recurring patterns. In contrast to the methodology employed by
+Tufano et al. [9], which used 2- or 3-grams, we found that a maximum size
+
+                                                   8
+Table 1: GPT PRs During a Round of Sampling Analysis
+
+Filter          Assistance Non Assistance
+
+Project name    4      21
+
+PR title        6      19
+
+Modified files  23     58
+
+PR body         1      24
+
+Total           34     122
+
+Note: Some GPT-assisted PRs matched two or more filters simultaneously. The total count
+(34) reflects overlaps between categories, not distinct PRs per filter. For example, a single
+PR might be identified as GPT-assisted based on both its title and modified files,
+contributing to multiple row counts.
+
+of 5-n-gram provided sufficient context or relevant information to accurately
+capture the role of GPT in GPT-assisted pull requests. We then proceeded to
+automatically extract both forward and backward n-grams, up to a maximum
+of 5-grams [32], containing the term GPT, while simultaneously applying a set
+of heuristics designed to reduce the occurrence of false positives. For instance,
+when analyzing the PR body, we encountered the sentence: "Instead of incor-
+porating muP into GPT-NeoX we are going to move these changes to [our fork
+of their repo]"1. From this, we extracted the backward n-gram "of incorporat-
+ing muP into GPT-NeoX" and the forward n-gram "GPT-NeoX we are going
+to"; the application of heuristic H4 identified GPT-NeoX as a reference to the
+PR name, thereby classifying this PR as non-GPT-assisted. Additionally, we
+applied heuristics to filter and automatically eliminate false positives, including
+cases where GPT is mentioned in a PR but not used for assistance, as well
+as instances where a PR may appear GPT-assisted but is actually unrelated
+(e.g., mentions of GPT in the context of non-code-related discussions, such as
+research or tool integration). These measures ensured that only relevant PRs,
+where GPT is actively employed for code review assistance, were included in
+the analysis.
+
+3.2.4. Inspection
+    To ensure the reliability of our heuristics, two authors independently ex-
+
+amined 200 randomly chosen PRs by carefully reviewing the labels generated
+during the execution of the heuristics. They then discussed unambiguous cases
+where the labeling was unclear to reach an agreement, such as whether the PR
+used GPT as an assistant. In the final step, the heuristics were adjusted and
+reapplied to improve accuracy and consistency. We performed three rounds
+of refinement/reapply until we obtained an accuracy of 95% as an acceptable
+agreement score in the labeling of PRs.
+
+    1https://github.com/EleutherAI/gpt-neox/pull/1061#issuecomment-1771635901
+
+                    9
+Table 2: Definition of the Heuristics Applied to the Project Name, PR Title, PR Body, and
+Modified File to Identify PRs using GPT as Assistance
+
+Heuristic Description
+
+H1  Aims to find and filter any GPT-related keywords within the
+
+    project name (e.g., EleutherAI/gpt-neo)
+
+H2  Matches and filters any pattern that implies the use of GPT
+
+    as non-assistance in the PR title (e.g., use of chatgpt-retrieval-
+
+    plugin)
+
+H3  Finds and filters any file name pattern, directory, URL, and file
+
+    version that indicates the use of GPT for implementation (e.g.,
+
+    Add ChatGPT Image Unlocker V2, from 3.1.0 to 3.3.0) with
+
+    the modified file names.
+
+H4  Extracts and filters the patterns in H1, H2, H3 in the PR body,
+
+    but including action verbs such as add, refactor, implement,
+
+    and rename (e.g., Added some simple error handling around
+
+    the OpenAI ChatGPT logic to capture rate limit errors and
+
+    bad gateways).
+
+    Table 3: Final Dataset: Assistance and Non-Assistance GPT PR Status Summary
+
+    Status Assistance Non Assistance
+
+    Open                  54                    38
+    Closed               179                   219
+    Merged             1367                  1036
+    Total              1600                  1293
+
+3.2.5. Combining the Heuristics Outputs
+    We reapplied the heuristics to the entire dataset to discard a higher number
+
+of false positives. All PRs were labelled GPT-assisted or GPT-non-assisted
+after applying the heuristics (as detailed in Table 2). Subsequently, one of the
+authors examined the dataset for true positive cases by manually reviewing the
+final labels. Ultimately, we split the dataset into two separate groups: "GPT-
+assisted" and "GPT-non-assistance" PRs. The table 3 displays the distribution
+of GPT-assisted and GPT-non-assisted PR in the dataset.
+
+3.3. Mapping GPT-assisted to Corresponding PR Phases
+    In this automatic step, our goal is to define the different phases of the code
+
+review process as previously performed by Kudrjavets et al. [5]. We report de-
+scriptive statistics to quantify the extent of GPT usage in each phase, depending
+on whether non-productive phases are present in the review workflow.
+
+3.3.1. Identifying PR Events using GPT
+    For each PR previously labeled as GPT-assisted, we applied the heuristic
+
+H4 (explained in Table 2) to timeline events [33] to label the events that the
+
+                              10
+                                           Figure 2: Pull Request Phases
+
+contributor and reviewers shared as GPT-assisted or GPT-non-assisted events.
+This specifies when and in what capacity GPT helps with PR discussions. Figure
+2 is a visual representation of our definition of the PR phases:
+
+    at submission: the time in hours from the first commit (committed
+       state) to when the author submits the code change (pulled state). Accord-
+       ing to figure 2, this phase corresponds to the time taken from at commitevent=0
+       to at bef ore pull.
+
+    at review: is the amount of time, expressed in hours, that occurs be-
+       tween the submission of a code review (pulled state) and the first re-
+       view, comment, inline comment (comment on specific code fragments),
+       commit-commented, review-commented, provided by a person who is not
+       the code's author. The review phase is comparable to the time-to-first-
+       response, which is a proportion of the time needed to accomplish the first
+       iteration of the code review. According to figure 2, this phase comprises
+       the period between from at pullevent!=0 to at reviewn=1.
+
+    at change: refers to the time in hour from the last review, comment, in-
+       line comment (comment on specific code fragments), commit-commented,
+       review-commented until the acceptance of the code review by someone
+       other than the author of the code. According to figure 2, this phase cov-
+       ers the time between at reviewn and at accepted.
+
+    at waiting time: the time in hours spent on multi-turn conversations
+       and feedback shared between reviewers and the author. The first waiting
+       time is between at review2 and at reviewnn-1. GPT was not use for the
+       second waiting time phase between acceptance and merge/close.
+
+    To analyze the impact of LLMs on each PR phase, we mapped a chronological
+sequence of events (including pulling, examining, integrating, forcing the head
+reference, commenting on reviews, comments in lines, commit messages, and
+merging) to the phases. To guarantee the accuracy of our findings, we only
+considered PRs with sequential timestamps. In these cases, the review phase
+follows the submission phase, the approval step follows the review, and the
+merging occurs after acceptance. Finally, to ensure human participation in
+
+                                                  11
+the review process, we excluded PRs in which the only participants, either as
+contributors or reviewers, were the original author and automated bots.
+
+    To have a fair comparison between the GPT-assisted and GPT-non-assisted
+PRs, we quantify the similarity between them by applying the Manhattan
+[34, 35] on the same factors as applied in RQ1 4.1. To mitigate the pres-
+ence of outliers or bias in the factor, we rescale the no commits, PR size,
+no changed files, project age to a range within [0, 1], applying the max-min
+method [35]. Since the two well-known metrics (the Manhattan and Euclidean
+distance produce very similar results (Spearman correlation  = 0.98 [36] when
+computing the distances between factors), we finally test the differences between
+the PRs supported by or without GPT by getting the minimum distance value
+from the Manhattan distance.
+
+4. Results
+
+4.1. Does GPT-assistance during the PR process reduce the resolution
+      time?
+
+Motivation: Recent studies have investigated the influence and popularity of
+ChatGPT on code review [37], [11], [24], [38]. The potential impact of using
+GPT models as assistants throughout the entire PR lifecycle remains largely un-
+explored. This research question investigates whether relying on GPT-assisted
+PRs affects code review resolution time in GitHub projects by analyzing the
+impact of GPT models on the overall merge time of PRs.
+
+Approach: To answer this research question, we build a Multiple Linear Re-
+gression Model (MLRM) [39] to empirically explain PR lifetime. For this pur-
+pose, we examine previous studies to identify a list of known factors that sig-
+nificantly influence PR resolution time [4], [16], [19], [40]. Bernardo et al. [41]
+defines resolution time as the time it takes for a code change to be merged into
+the development branch after review. This implies that the change is not fully
+implemented until it can be built, tested, and deployed. This is possible only
+after merging into the main branch. We will use the time it takes for code mod-
+ifications to be merged as a metric, selecting only PRs that have been merged,
+considering the identified factors that affect this time [40]. Furthermore, we
+added a two-state indicator to the dataset, with 1 representing PR that use
+GPT-assisted and 0 representing PR that use GPT non-assisted. This indicator
+is used to better understand the impact of the GPT as a factor on PR latency.
+
+    After this step, our dataset includes only the merged PRs with a total of
+1,367 PRs (85.43% of the total GPT-assisted PR population as shown in Table 3)
+using GPT-assisted. To compare the resolution time between the GPT-assisted
+PRs and GPT-non-assisted PRs, we searched for the most similar PRs among
+the 23,874 identified GPT-non-assisted PRs by using the Manhattan distance
+[42] as shown in Figure 1. To compare the statistical difference between PRs
+using GPT-assisted or GPT-non-assisted, as an influencing factor, we use the
+Mann-Whitney U test, a non-parametric test that compares two independent
+
+                                                  12
+groups that do not require normally distributed samples[43]. To carry out this
+statistical test, we utilize the stats package2 considering a confidence level of
+95% ( = 0.05). The following formula and list of factors characterize the
+Linear Model (LM) performed in our study:
+
+time to merge = is gpt assisted
+
++ no commits
+
++ P R size                       (1)
+
++ no changed f iles
+
++ project age
+
+ time to merge (dependent variable) is a numeric value that indicates the
+   latency of PR in hours.
+
+ is gpt assisted (Treatment) is a binary value ([0,1]) that translates whether
+   a PR is a GPT-assisted PR.
+
+ Common factors that influence the PR latency [4, 19, 16].
+
+       no commits (control variable) represents the number of changes
+          pushed to a repository over time.
+
+       PR size (control variable) is the amount of change in the PR (added
+          + deleted lines of code).
+
+       no changed files (control variable) is the number of files that have
+          changed during the review process.
+
+ The project age in months (control variable) variable, which represents the
+   maturity level of the projects.
+
+    To mitigate the influence of skewness and enhance the clarity of our statis-
+tical examination, we implemented a logarithmic transformation on variables
+that exhibit a skewed distribution [44]. To implement our linear model shown
+in Equation 1, we follow the approach proposed by James et al. [39]. First, we
+build our model using the lm function that comes standard with the distribu-
+tion3. Then we evaluate the degree of confidence of our model by obtaining the
+marginal and conditional coefficients of determination (R2) [45]. To determine
+whether the adoption of GPT-assisted has a potential impact on PR latency,
+we check the statistical significance and the total variance of is gpt-assisted in
+the model. To identify the level of significance of the variables, we rely on the
+traditional confidence level of  = 0.05 [46].
+
+Findings: As shown in Table 4, the multiple linear regression model suggests
+that GPT assistance has a statistically significant effect on pull request (PR)
+
+    2R Core Team. 2023. R: a language and environment for statistical computing.
+https://www.R-project.org
+
+    3https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm
+
+                                                  13
+             Table 4: Linear Model Coefficients for log1p(time to merge h)
+
+Predictor                 Estimate Std.Err t value Pr(> | t |)              Signif.
+                                                                            ***
+(Intercept)               0.5186 0.1248 4.154                  3.37e-05     ***
+                                                                            ***
+is gpt-assisted           -0.4921 0.0745 -6.601                4.88e-11     ***
+
+log1p(no commits)         0.8052 0.0715 11.267                 < 2e-16      ***
+
+log1p(PR size)            0.1576 0.0322 4.899                  1.02e-06
+
+log1p(no changed files)   0.0064 0.0702 0.091                  0.927
+
+log1p(project age month)  0.3371 0.0275 12.252                 < 2e-16
+
+Signif. codes: 0 `***' 0.001 `**' 0.01 `*' 0.05 `.' 0.1 ` ' 1
+
+latency. Specifically, the variable is gpt-assisted yields a p-value of 4.88e-11,
+well below the standard significance threshold of  = 0.05, indicating strong
+evidence against the null hypothesis. The corresponding negative coefficient
+suggests that GPT assistance is associated with a reduction in the time re-
+quired to merge a PR. The standard error for this estimate is 0.0745, indicating
+a high degree of precision, and the large associated t-value reinforces the ro-
+bustness of the finding. Together, these results demonstrate that GPT-assisted
+PRs tend to be merged more quickly than their non-assisted counterparts. This
+quantitative result is consistent with the descriptive statistics presented in Fig-
+ure 3, where GPT-assisted PRs have a median merge time of approximately 9
+hours, compared to 23 hours for non-assisted PRs.
+
+    Answer to RQ1. The results highlight the potential of GPT assis-
+    tance to significantly accelerate the pull request review process, reducing
+    merge times by more than 60%. Integrating GPT as an assistance in the
+    development workflows can help streamline code review, improve team
+    efficiency, and facilitate faster software delivery.
+
+4.2. How does GPT assistance impact various phases of the PR pro-
+      cess?
+
+Motivation: Previous studies have shown that factors such as technology,
+collaboration dynamics, and project context influence the effectiveness of code
+reviews [4, 5, 6, 41]. More recently, AI-driven tools, particularly LLMs, have
+been explored for their potential to assist with PR-related development tasks
+and improve review efficiency [15, 14, 9]. Despite growing interest, little is known
+about how developers actually use GPT during the code review process or how
+its usage varies across different phases of a PR lifecycle. This gap motivates our
+investigation of the impact of GPT as assistance on review and resolution time.
+By identifying the specific phases in which GPT is applied and understanding
+its role as an assistive (rather than an automated) tool, we aim to assess where
+it offers the greatest benefit in the review workflow.
+
+Approach: To investigate the impact of using GPT as assistance throughout
+the PR phases, we first define the distinct phases of the PR workflow, starting
+
+                          14
+                            Time to Merge by GPT Assistance
+
+Time to Merge (hours)                                        22.7
+       5 10 15 20 25 30 35
+                            8.9
+
+                            GPT-assisted      GPT-non-assisted
+
+                                          Pull Request Type
+
+     Figure 3: Distribution of time to merge for GPT-assisted and GPT non-assisted PRs
+
+from the submission of a change to merge into the project branch including the
+presence of the waiting time, as described in detail in the section 3.3. To assess
+whether the use of GPT-assisted leads to statistically significant differences in
+PR phases, the Mann-Whitney U test was applied [47]. This non-parametric
+test is well-suited for comparing two independent samples, particularly when the
+assumption of normality cannot be guaranteed. In this study, the GPT-assisted
+and GPT-non-assisted datasets are treated as independent groups, as each PR
+belongs to only one condition (each PR is placed into only one of these two
+groups), with no overlapping or paired observations. Using the Mann-Whitney
+U test aims to determine whether the distributions of phases differ significantly
+between the two groups, thus providing evidence on the potential impact of
+GPT-assisted.
+
+Findings: The results presented in Table 5 highlight significant differences in
+the duration of review between GPT-assisted and non-assisted PRs, with partic-
+ularly notable reductions observed during the At Review and At Waiting Before
+Change phases. In the At Review phase, the median time for GPT-assisted PRs
+was approximately 1 hour, compared to 3 hours for GPT-non-assisted PRs --
+reflecting a 66.7% reduction in the review time. The most significant difference
+was found in the At Waiting Before Change phase, where GPT-assisted PRs
+had a median waiting time of approximately 3 hours, while their non-assisted
+counterparts experienced a median of 24 hours. This corresponds to an 87.5%
+
+                                          15
+Table 5: Median time (in hours) spent across three key PR phases for GPT-assisted and
+non-assisted pull requests
+
+    GPT       At Review  At Waiting for change  At Change
+   Assisted          1                   3             1
+Non-Assisted         3                  24             1
+
+Note: There is no evidence of GPT assistance being used during the submission or waiting
+after acceptance phases of the PR workflow.
+
+reduction in waiting time. The results of the Mann-Whitney U test confirmed
+that the reductions in these two phases were statistically significant, with p-
+values well below the conventional significance threshold ( = 0.05). These low
+p-values provide strong evidence against the null hypothesis, suggesting that
+the differences are unlikely to be due to random variation. Interestingly, no
+significant differences were observed in Phase 1 (At Submission) and Phase 5
+(At Waiting After Acceptance), where there was no clear indication of GPT
+as assistance was used during these stages, suggesting that the use of GPT is
+concentrated in the core iterative phases of the review process.
+
+    Answer to RQ2. Our analysis reveals that GPT-assisted PRs are
+    associated with significantly shorter durations in specific phases. The
+    review phase is 33% faster, and the revision before acceptance is reduced
+    by 87% compared to GPT-non-assisted PRs. However, no significant
+    differences are observed in the change phase.
+
+4.3. Why do contributors and reviewers use GPT during the PR pro-
+      cess?
+
+Motivation: Our prior analysis revealed that the use of GPT was associated
+with notable variations in the duration of individual PR phases, suggesting
+that its influence extends beyond the overall resolution time to phase-specific
+developer activities. While earlier studies have examined how developers use
+GPT for specific code review tasks [9, 12], recent work has raised concerns about
+its influence on review discussions and developer responses [24, 38]. Although
+GPT tools show promise across various software engineering activities, little is
+known about their role across different phases of the PR workflow. This suggests
+an underexplored but potentially broad impact of GPT-based tools on the code
+review process. To fill the gap, we analyze the purposes for which developers
+use GPT within GitHub PR phases.
+
+Approach: To explore the purposes for which developers use GPT as assis-
+tance, we performed a detailed analysis of a statistical sample of 310 randomly
+selected GPT-assisted PRs drawn from the dataset described in Section 3.3.
+Initially, two authors independently examined and assigned labels to each in-
+stance (e.g., enhancement, documentation, fixing bugs). The labeling process
+
+                                                  16
+was conducted in two rounds, each covering about 155 GPT-assisted PRs. Af-
+ter each round, the authors met to refine the labels, and the final classification
+was based on the taxonomy proposed by Tufano et al. [9]. The analysis specif-
+ically targeted events in which developers explicitly recorded their prompts to
+GPT and the corresponding suggestions generated by the model. This classifi-
+cation enabled a structured understanding of the functional contexts in which
+GPT-assisted PRs are integrated into the PR workflow.
+
+Findings: Table 6 presents the most common tasks for which developers seek
+the assistance of GPT during each phase of the PR process, along with details
+on their frequency and significance, highlighting its focused role in supporting
+diverse development tasks. In the following, we provide a detailed description
+of these tasks and their distribution across the different PR phases, highlighting
+the overall use of GPT on the code review lifecycle.
+
+    Enhancement: As shown in Table 6, this is the most common activ-
+       ity during the stages (60.26% At Review, 42.31% Waiting before Change
+       and 35.90% At Change), when developers offer current code as a base-
+       line for adaptation. Most of the suggestions made by GPT are about
+       refactoring the code, missing error handling, and making changes to ex-
+       isting code for performance reasons. We can see that the rewriting of
+       the code was for minor modifications; for example, the most common
+       modification was renaming a variable, function or class name, changing a
+       flag variable, declaring a variable, adding/removing a conditional or re-
+       organization a function. In contrast, we see more occasions when GPT
+       proposes adding an error-handling instruction (try..catch). An example
+       of a case of enhancement can be found in the PR [48], where the devel-
+       oper asked ChatGPT to change a Ruby plugin: updates external-posts.rb
+       plugin, allowing the user to specify an explicit lists of urls in config.yml
+       that are then displayed in the blog feed as external posts. 99% of the code
+       in this change is written by gpt-4: https://chat.openai.com/share/
+       24432d24-36a7-4d6f-a5c0-d7e5142f68cd
+
+    Implementation: Contrary to our expectations, in our sample we ob-
+       serve that the Implementation in which the developers ask GPT to gener-
+       ate a piece of code (from scratch) has a low frequency, as shown in Table
+       6 where the ratio is split on 6.41% At Review, 10.26% Waiting before
+       Change and 8.97% At Change. An illustrative instance is presented in
+       [49], where a developer sought assistance from GPT in generating code
+       to retrieve remote resources, and GPT responded with a Python-based
+       implementation. We identified several cases in which reviewers expressed
+       disagreement with the solutions generated by GPT. One such example is
+       documented in [50], where the reviewer remarked, "I will not blindly accept
+       any AI-generated code" and "using GPT so might not work as intended.".
+
+    Bug fixing:. This task ranks as the second most common use case for
+       GPT assistance, occurring primarily during the Review phase (25.64%)
+
+                                                  17
+       and to a lesser extent during the Change phase (21.80%). In many in-
+       stances, developers consult GPT to diagnose why a specific piece of code is
+       not functioning correctly or to request help in fixing an error (e.g., "GPT
+       found 2 config files not exist in the dataset list.") [51]. GPT-generated
+       suggestions also include improvements such as adding error-handling logic
+       --for example: "The code does not seem to have any error handling. This
+       could lead to unexpected behavior if an error occurs. Consider adding try-
+       catch blocks to handle potential errors." [52].
+
+    Testing: We find few cases where developers ask for GPT-assisted about
+       testing related tasks in our sample (every single character of tests is gen-
+       erated by GPT-4 ) [53], (I have added the shorthand option -f for the -files
+       flag in the ask.py file and updated the test case in test gpt cli.py.)[27]. We
+       also notice that the testing inquiries to GPT were for more complex tasks
+       such as classes and core logic testing (Chat GPT says this might work: the
+       class AZDemoContentTest extends QuickstartFunctionalTestBase...)[54].
+
+    Documentation: We observe that developers utilize GPT both for gener-
+       ating new documentation -- such as implementation descriptions in mark-
+       down files or tutorials on how to use specific functionalities [55] -- and
+       for modifying existing documentation, including improving navigability,
+       enhancing readability and formatting, and updating outdated links [56].
+       Notably, in most instances, GPT-generated suggestions pertain to the
+       README (.md) file [57, 58].
+
+    Other tasks: We notice that At Changed Phase and At Waiting before
+       Change, non-programming related tasks count for the most requested ac-
+       tivity with 28.20% and 17.95% respectively. Among the most common
+       questions developers ask GPT for suggestions are about translation, file
+       versions, and setting up CD/CI workflows (YAML files, file configuration,
+       Docker, Kubernetes), Copyright, and User Interfaces [59, 60, 61].
+
+    Answer to RQ3. Contributors and reviewers mainly use GPT to assist
+    with coding enhancements, bug fixes, and documentation. It is partic-
+    ularly useful during the review phase, helping to identify and resolve
+    issues, refine code, and improve documentation. However, its use for
+    creating new features or writing tests is less common. This pattern in-
+    dicates that GPT primarily functions as a support tool for enhancing
+    existing code rather than creating new components. This contributes to
+    the effectiveness and quality of the code review process.
+
+5. Discussion
+
+5.1. Implications for Practitioners
+    These findings have important implications for practitioners. Developers can
+
+integrate GPT-assisted PR into their phases to accelerate code reviews, reduce
+
+                                                  18
+Table 6: Frequency of Tasks That Developers Ask GPT for Assistance in PR Phases Within
+a Sample of 300 GPT PRs
+
+            Tasks      At         At        At
+                    Review     Wait-      Change
+  Enhancement                  ing for
+Implementation          %      change       %
+
+          Bug Fix       60.26     %        35.90
+           Testing       6.41     42.31      8.97
+Documentation           25.64     10.26
+                         1.28     15.38    21.80
+             Other      11.54                5.13
+                        12.82       0.00   10.26
+                                  12.82    28.20
+                                  17.95
+
+Note: Some GPT-assisted PRs matched two or more filters simultaneously. The total count
+(34) reflects overlaps between categories, not distinct PRs per filter. For example, a single
+PR might be identified as GPT-assisted based on both its title and modified files,
+contributing to multiple row counts.
+
+latency, and improve collaboration. In doing so, organizations can streamline
+their code review processes and focus on delivering value more efficiently. In
+addition, establishing best practices for the use of GPT-assisted can further
+enhance its effectiveness and ensure seamless adoption across teams. By inte-
+grating GPT into the pull request (PR) process, teams can significantly reduce
+review times, expedite the implementation of changes, and minimize waiting pe-
+riods, ultimately streamlining their code review cycles. This efficiency gain al-
+lows developers to focus more on delivering value rather than being hindered by
+prolonged code review timelines. To maximize the effectiveness of GPT, teams
+should consider developing best practices for its use. For example, defining spe-
+cific scenarios where GPT as assistance is most beneficial, such as refactoring
+code, resolving bugs, and enhancing documentation, can help ensure its targeted
+and efficient application. Additionally, encouraging collaboration between de-
+velopers and reviewers when leveraging GPT can help maintain high-quality
+outcomes and prevent over-reliance on automated tools.
+
+5.2. Implications for Researchers
+
+    An important avenue for future research lies in examining the risks of user
+over-reliance on GPT in code review processes. While generative AI tools like
+ChatGPT offer remarkable potential to streamline code review phases and en-
+hance productivity, there is a need to understand how unproductive interac-
+tions with ChatGPT might emerge and how these could undermine efficiency
+or decision-making. Identifying patterns of ineffective GPT use can help re-
+searchers propose strategies to optimize its integration into code review prac-
+tices in real-world scenarios. Future studies could focus on designing frameworks
+
+                    19
+and interfaces that guide users toward more effective use of GPT while main-
+taining control of their code review workflow. For instance, developing tools
+that provide metrics on the quality (i.e., reliability, usability, maintainability,
+testability of the code generated), confidence, or relevance of GPT's solutions,
+enabling users to make more informed decisions and ensuring that developers
+maintain direction and avoid veering into unproductive tasks.
+
+    Moreover, researchers could explore the development of features that en-
+courage reflective practices, such as visualizations that compare GPT's sugges-
+tions with best practices or community standards. These features could help
+users critically evaluate AI-generated solutions rather than passively adopting
+them. Such studies should examine their impact on developer productivity,
+decision-making, and team dynamics over time. Longitudinal studies could pro-
+vide valuable insights into how extended use of GPT affects user skill retention,
+adaptability, and overall collaboration in software engineering.
+
+6. Threats to Validity
+
+    In this section, we discuss the threats to the internal and external validity
+of our study.
+
+6.1. Construct Validity
+
+Identifying GPT Use via Explicit Mentions: the use of a single keyword
+("GPT") to identify PRs that potentially involve the assistance from ChatGPT.
+This keyword-based method may result in false negatives, where GPT assistance
+was used but not explicitly mentioned, as well as false positives, where the term
+"GPT" appears in a different context (e.g., in a discussion). Consequently, this
+introduces potential bias in the classification of PRs as GPT-assisted and may
+affect the accuracy of our findings regarding the actual impact of GPT use on
+the review process. While a semi-automated verification step helps mitigate this
+issue, future work could benefit from more robust detection methods, such as
+NLP-based intent analysis.
+
+Definition of GPT as Assistance: A potential threat lies in how the GPT
+assistance is operationally defined. This study relies on heuristics to label PRs as
+GPT-assisted or non-assisted, but these heuristics may inadvertently misclassify
+instances, particularly when contributors do not explicitly document their use
+of GPT in PR titles, comments, or files. To mitigate this, manual inspections
+were performed to refine the heuristics and achieve high labeling precision (95%).
+However, some misclassification may persist.
+
+Measurement of PR Phases: The study measures the duration of PR phases
+(e.g., review, waiting) using timestamps and events extracted from GitHub.
+While these metrics provide an objective basis for analysis, they may not fully
+capture qualitative aspects, such as the complexity of interactions or the nature
+of GPT's contributions. In addition, inconsistencies in how timestamps and
+events are logged across projects could introduce variability. Efforts to mitigate
+
+                                                  20
+these issues include cross-checking phase definitions and excluding PRs with
+missing or illogical events and timestamps.
+
+Impact Attribution: Attributing observed reductions in PR phase times to
+GPT assistance alone is challenging. Other factors, such as task simplicity or
+team dynamics, could contribute to the observed effects. The use of a linear
+model helps account for some confounding variables (e.g., project age, number
+of commits), but residual confounding remains a potential threat. By addressing
+these threats, the study aims to provide a robust assessment of GPT's influence
+on PR phases. However, future research could refine the constructs further, for
+example, by incorporating direct user feedback on their interactions with GPT
+or using more sophisticated techniques to distinguish GPT contributions from
+other factors.
+
+Interactions with GPT: The nature of developer interactions with GPT may
+not be fully captured by simple time measurements. For example, the impact
+of GPT on developer behavior (e.g., whether it encourages more efficient cod-
+ing practices or simply accelerates repetitive tasks) is not directly measured in
+this study. Future research could incorporate qualitative data, such as devel-
+oper surveys or interviews, to better understand the cognitive and collaborative
+effects of GPT assistance on the code review process.
+
+6.2. Internal Validity
+
+Confounding Variables: The impact of GPT on PR resolution times may be
+influenced by factors other than GPT assistance, such as the complexity of the
+code changes, the experience of the developer, or the team's workflow dynamics.
+While the study controls for some confounding variables through regression
+models, residual effects may still persist. Further steps, such as matching or
+propensity score analysis, could help control for additional confounders that
+were not included in the model.
+
+Task Categorization: Categorizing the tasks for which GPT is used could be
+subjective and may vary depending on the developer's interpretation of GPT's
+assistance. If task categorization is inconsistent or unclear, it could skew the
+analysis and affect the conclusions drawn about the types of assistance most
+commonly used.
+
+The Role of the Linear Model in Time Reduction: While the study finds
+a reduction in time for various phases of the code review process when GPT
+is used, it is important to ensure that this reduction in time is genuinely due
+to GPT's assistance and not influenced by other factors (e.g., more efficient
+developers or less complex PRs). If time reduction is attributed to factors other
+than GPT, it could undermine the internal validity of the study.
+
+6.3. External Validity
+
+Platform-Specific Bias: This study analyzes GitHub data, which may have
+unique characteristics that limit the generalizability of findings to other plat-
+forms such as GitLab or Bitbucket. For instance, GitHub as a large open-source
+
+                                                  21
+community and due to its widespread usage may introduce dynamics that are
+not presented in smaller or private repositories. Future research could include
+multiple platforms to better assess the broader applicability of these findings.
+
+Repository Selection: The data included in this study were selected based
+on a threshold of 10 stars, indicating a relatively active user base. While this
+ensures that the results reflect commonly used, publicly available code, it also
+introduces selection bias. The results may not generalize well to less popular
+or private repositories, where developer practices may differ. Expanding the
+dataset to include a wider range of repositories, including those with lower
+visibility or fewer contributors, would help assess the external validity of the
+findings.
+
+Task Variability: PRs vary widely in terms of content, including code size,
+task complexity, and the nature of the proposed changes. Although we at-
+tempted to control for these factors, the diversity in PRs introduces a level of
+variability that could influence the generalizability of the results. To address
+this, future studies could consider stratified sampling or clustering based on
+PR characteristics to assess the impact of GPT more accurately across different
+types of tasks.
+
+7. Conclusion
+
+    This study highlights the potential of generative AI tools, particularly large
+language models (LLMs) such as ChatGPT, to enhance collaborative software
+development. Through an analysis of their application in GitHub pull requests
+(PRs), we observe substantial improvements across key phases of the PR work-
+flow, most notably within the review phase, which exhibits a 33% reduction in
+review duration and an 87% decrease in waiting time for acceptance. These
+results underscore the capacity of GPT to improve code review efficiency and
+support diverse tasks, including code enhancement, bug resolution, and doc-
+umentation generation, with the most significant gains occurring during the
+review process. While the contributions of GPT are clearly beneficial in cer-
+tain phases, its limited influence during the submission and post-acceptance
+phases points to areas for further development and optimization. Future re-
+search should investigate how GPT can be more effectively integrated across
+the entire PR lifecycle and evaluate its impact on long-term productivity. As
+LLMs continue to advance, they are poised to become essential components
+of software engineering, promoting greater efficiency, collaboration, and code
+quality. By harnessing the capabilities of these tools, both practitioners and
+researchers can shape the evolution of collaborative development workflows and
+drive innovation in the field of software engineering.
+
+Appendix A.
+
+    In the following, we provide a detailed list of the patterns found in project
+name, PR title, PR body, and modified file to identify PRs using GPT as
+
+                                                  22
+assistance, along with their definitions and intended matching purpose.
+
+    P1: Pattern for Detecting GPT-Related Identifiers. This regex iden-
+tifies phrases containing "chatgpt," "gpt," or "openai," ensuring that they are
+preceded by descriptive words. It prevents "chat" or "gpt" from appearing
+immediately after the separator, enforcing a structured naming convention for
+AI-related terms. Example: project chatgpt 123.
+
+(?:\w+\s*[-_.\s]*)+(chatgpt|gpt|openai)
+[-_](?!chat|gpt)[\w-]*
+
+    P2: Pattern for Detecting GPT-Related Keywords in URL. Matches
+URLs containing "chatgpt","gpt", or "openai" while ensuring a valid structure.
+It supports both HTTP and HTTPS protocols, optional "www" subdomains,
+and common top-level domains (TLDs). The pattern also captures query param-
+eters and paths where AI-related keywords appear, making it ideal for filtering
+relevant web links. Example:https://my-site.ai/chatgpt-version
+
+https?:\/\/(?:www\.)?\w{2,256}\.[a-z]{2,6}
+\b
+(?:[\w@:%_+.~#?&/=]*\b
+(?:chatgpt|gpt|openai)\b
+[\w@:%_+.~#?&/=]*)?
+
+    P3:Pattern in Detecting with GPT-related Keywords in Path and
+URL. matches file pathsthat include specific AI-related keywords like "chat-
+gpt," "gpt," or "openai," while also supporting common file path structures. It
+handles both forward and backslashes, valid path components, and file exten-
+sions. Example: /home/user/gpt data.csv
+
+([a-z]:|[\\/])((?:[\\/][a-z_\-\s0-9\.]+
+|(chatgpt|gpt|openai))+\.[a-z]{2,3})
+
+    P4: Pattern in Detecting GPT Keywords in File Paths. matches
+strings containing the keywords "chatgpt," "gpt," or "openai" within file paths
+or URLs. It handles optional spaces, separators (like hyphens and underscores),
+and supports valid URL components (letters, digits, and special characters).
+It's designed to identify AI-related content in file paths, query parameters, or
+directories while allowing flexible formatting. Example: chatgpt@example.com,
+chatbot@openai.com
+
+[a-z\s\/\-_]*(chatgpt|gpt|openai)
+[\s\-_@:%]*[\w@:%._]+[\s\-_]*
+
+    P5: Pattern for Matching ChatGPT References in Phrases . matches
+phrases like "like in the chatgpt" or "like the one from chatgpt" at the end of a
+string. It efficiently captures variations in the phrasing, ensuring that the string
+ends with a reference to "chatgpt" while supporting both expressions.
+
+(like\s(?:in|the\sone\sfrom)\schatgpt)$
+
+                                                  23
+    P6: Pattern for Matching "Spam" Followed by AI Keywords.
+matches the word "spam" followed by a space and one of the AI-related key-
+words ("chatgpt," "gpt," or "openai") at the end of a string. It is optimized for
+simplicity and flexibility, ensuring accurate detection of such phrases.
+
+(spam\s*(chatgpt|gpt|openai))$
+
+    P7: Pattern for Matching AI Keywords and Code-Related Terms.
+matches strings containing AI-related keywords (like "chatgpt," "gpt," "ope-
+nai," or "azureai") followed by code-related terms such as "label," "function,"
+"class," "model," or "service." It handles both singular and plural forms effi-
+ciently, making it ideal for detecting AI and code-related concepts in text or
+code.
+
+([\w\s@:%_\+.~#?&/=]*
+(chatgpt|gpt|openai|azureai)[\s\w]*
+(label|class|functions?|constructors?|
+calls?|formatter|demos?|sources?|
+connectors?|plugins?|endpoints?|
+models?|apis?|gateways?|services?))
+
+    P8: Pattern for Matching AI Keywords with Numeric Suffixes.
+matches occurrences of AI-related keywords ("gpt", "chatgpt", "openai") fol-
+lowed by optional spaces, hyphens, or underscores and a numeric suffix (up to
+6 digits or decimals). It is designed to efficiently identify AI keywords with nu-
+meric versions or identifiers, and works for both single and repeated instances
+in the string.
+
+([a-z\s]*(gpt|chatgpt|openai)[\s\-_]*
+[\d\.]{1,6})+
+
+    P9: Pattern for Matching GRUB GPT References. matches in-
+stances of "grub gpt" or "GRUB GPT" in strings, with support for optional
+spaces, hyphens, underscores, digits, and periods preceding the keywords. It
+identifies these specific references in various contexts, including file paths, con-
+figuration strings, or any similar patterns.
+
+([\w\s\-_\.0-9]*(grub_gpt|GRUB_GPT))
+
+    P10: Pattern for Matching AI Keywords at the End of a String.
+matches strings that end with one of the AI-related keywords ("chatgpt", "gpt",
+or "openai"), allowing for optional spaces, URL-safe characters, and hyphens
+before the keyword. It is ideal for identifying these specific keywords in paths,
+URLs, or other contexts where they appear at the end of a string.
+
+([\w\s@:%_\+.~#?&\/=\-]*)
+(chatgpt|gpt|openai)$
+
+                                                  24
+    P11: Pattern for Matching Disk Types and Partition Formats.
+matches common disk types and partition formats, including "disk guid," "mbr,"
+"qemu," "kvm," and "gpt partition(s)." It is optimized for detecting variations
+in case and optional spaces or plurals.
+
+(disk guid|mbr|MBR|qemu|QEMU|kvm|
+KVM|gpt\s?partition(s)?)
+
+    P12: Pattern for Matching ChatGPT Requests with Action Verbs.
+matches requests directed to "ChatGPT" or "GPT" using various action verbs
+like "say," "write," "suggest," "think," etc., allowing for optional spaces or hy-
+phens between "chat" and "gpt." It's designed to identify common user queries
+to AI models, including instructions and requests for explanations or sugges-
+tions.
+
+(chatgpt|gpt|chat\s?gpt|chat\-gpt)[\s]
+(say|get|write|suggest|
+tell|think|explain|
+offer|to\s?explain|
+flawless|make\s?some\s?
+suggestion|walk\s?me)
+
+    P13: Pattern for Matching OpenAI Chat Links. matches URLs from
+https://chat.openai.com, including optional /share/ paths and any query pa-
+rameters. It efficiently captures both the base URL and potential query strings,
+ensuring flexible matching of OpenAI chat links.
+
+https:\/\/chat\.openai\.com(\/share\/?)
+[\w@:%._\+~#=]*
+
+    P14: Pattern for Matching Examples Referencing GPT and Re-
+lated Models. matches phrases like "some example by GPT," "some example
+by ChatGPT," or similar phrases involving AI models like OpenAI, Chat-GPT,
+or Coderabbit. It captures variations in spacing, hyphenation, and model names
+while ensuring flexibility in the format of such references.
+
+(some\sexample[\w\s\-]+by\s
+(gpt|chatgpt|openai|chat\-gpt|
+coderabbit|gemini|chat\sgpt))
+
+    P15: Pattern for Matching GPT Versions Followed by "Flawless".
+matches strings like "gpt-123 flawless," where "gpt-" is followed by numeric
+values and any combination of alphanumeric characters and spaces, concluding
+with the word "flawless."
+
+gpt\-[\d]+[\w\s]+flawless
+
+    P16: Pattern for Matching GPT Requests to "Make Some Sug-
+gestion". matches strings like "gpt-123 make some suggestion," where "gpt-"
+is followed by digits and any alphanumeric characters or spaces, with the phrase
+"make some suggestion" at the end. It accounts for optional spaces in the phrase
+for flexibility.
+
+                                                  25
+gpt\-[\d]+[\w\s]+make\s?some\s?suggestion
+
+    P17: Pattern for Matching GPT Requests to "Walk Me". matches
+the phrase "gpt walk me," allowing for optional spaces between "gpt," "walk,"
+and "me," making it flexible for user input variations.
+
+gpt\s?walk\s?me
+
+    P18: Pattern for Matching Actions Performed with GPT and Re-
+lated Models. captures actions like "ask," "create," "generate," and more,
+followed by prepositions like "by," "with," or "from," and then identifies asso-
+ciations with GPT and related models (e.g., "gpt," "chatgpt," "openai," etc.).
+It's ideal for recognizing specific action-based queries related to AI.
+
+(ask\s?to|create|pass|consult|sponsor|
+generate|document|investigate|advise|
+suggest|modify|solve|support|update|
+summary|response|change|power|polish|
+utilize|comment|write|improve|collaborate|
+collaboration|get)\s(by|one\swith|with|
+from|per|via|of)\s(gpt|chatgpt|openai|
+chat\-gpt|coderabbit|gemini|chat\sgpt|
+code\sreview\sgpt)
+
+Author Contributions
+
+    Antonio Collante: Conceptualization, Methodology, Software, Formal Anal-
+ysis, Investigation, Data Curation, Writing Original Draft, Writing - Review and
+Editing, Visualization Samuel Abedu: Conceptualization, Software, Data Cu-
+ration, Writing - Review and Editing SayedHassan Khatoonabadi: Concep-
+tualization, Methodology, Validation, Writing - Review and Editing, Project
+Administration Ahmad Abdellatif: Conceptualization, Validation, Writing -
+Review and Editing Ebube Alor: Data Curation Emad Shihab: Conceptu-
+alization, Supervision, Project Administration, Funding Acquisition
+
+Acknowledgements
+
+    This work was supported by the NSERC CREATE grant number 555406,
+2021.
+
+References
+
+ [1] G. Gousios, M. Pinzger, A. v. Deursen, An exploratory study of the pull-
+      based software development model, in: Proceedings of the 36th interna-
+      tional conference on software engineering, 2014, pp. 345-355.
+
+                                                  26
+ [2] C. Sadowski, E. S¨oderberg, L. Church, M. Sipko, A. Bacchelli, Modern code
+      review: a case study at google, in: Proceedings of the 40th international
+      conference on software engineering: Software engineering in practice, 2018,
+      pp. 181-190.
+
+ [3] A. Bacchelli, C. Bird, Expectations, outcomes, and challenges of modern
+      code review, in: 2013 35th International Conference on Software Engineer-
+      ing (ICSE), IEEE, 2013, pp. 712-721.
+
+ [4] X. Zhang, Y. Yu, G. Gousios, A. Rastogi, Pull request decisions explained:
+      An empirical overview, IEEE Transactions on Software Engineering 49
+      (2022) 849-871.
+
+ [5] G. Kudrjavets, A. Kumar, N. Nagappan, A. Rastogi, Mining code review
+      data to understand waiting times between acceptance and merging: An
+      empirical analysis, in: Proceedings of the 19th International Conference
+      on Mining Software Repositories, 2022, pp. 579-590.
+
+ [6] O. Baysal, O. Kononenko, R. Holmes, M. W. Godfrey, Investigating tech-
+      nical and non-technical factors influencing modern code review, Empirical
+      Software Engineering 21 (2016) 932-959.
+
+ [7] Y. Zheng, Y. Yang, H. Tu, Y. Huang, Code-survey: An llm-driven method-
+      ology for analyzing large-scale codebases, arXiv preprint arXiv:2410.01837
+      (2024).
+
+ [8] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez,
+      L. Kaiser, I. Polosukhin, Attention is all you need, Advances in neural
+      information processing systems 30 (2017).
+
+ [9] R. Tufano, A. Mastropaolo, F. Pepe, O. Dabi´c, M. Di Penta, G. Bavota,
+      Unveiling chatgpt's usage in open source projects: A mining-based study,
+      in: 2024 IEEE/ACM 21st International Conference on Mining Software
+      Repositories (MSR), IEEE, 2024, pp. 571-583.
+
+[10] C. Ebert, P. Louridas, Generative ai for software practitioners, IEEE
+      Software 40 (2023) 30-38.
+
+[11] B. Grewal, W. Lu, S. Nadi, C.-P. Bezemer, Analyzing developer use of chat-
+      gpt generated code in open source github projects, in: 2024 IEEE/ACM
+      21st International Conference on Mining Software Repositories (MSR),
+      IEEE, 2024, pp. 157-161.
+
+[12] M. Chouchen, N. Bessghaier, M. Begoug, A. Ouni, E. A. AlOmar, M. W.
+      Mkaouer, How do software developers use chatgpt? an exploratory study
+      on github pull requests, in: 2024 IEEE/ACM 21st International Conference
+      on Mining Software Repositories (MSR), IEEE, 2024, pp. 212-216.
+
+                                                  27
+[13] Z. Rasheed, M. A. Sami, M. Waseem, K.-K. Kemell, X. Wang, A. Nguyen,
+      K. Syst¨a, P. Abrahamsson, Ai-powered code review with llms: Early re-
+      sults, arXiv preprint arXiv:2404.18496 (2024).
+
+[14] T. Xiao, H. Hata, C. Treude, K. Matsumoto, Generative ai for pull request
+      descriptions: Adoption, impact, and developer interventions, Proceedings
+      of the ACM on Software Engineering 1 (2024) 1043-1065.
+
+[15] N. Davila, J. Melegati, I. Wiese, Tales from the trenches: Expectations
+      and challenges from practice for code review in the generative ai era, IEEE
+      Software (2024).
+
+[16] D. Moreira Soares, M. L. de Lima Ju´nior, L. Murta, A. Plastino, What
+      factors influence the lifetime of pull requests?, Software: Practice and
+      Experience 51 (2021) 1173-1193.
+
+[17] N. Davila, I. Nunes, A systematic literature review and taxonomy of mod-
+      ern code review, Journal of Systems and Software 177 (2021) 110951.
+
+[18] R. Widyasari, T. Zhang, A. Bouraffa, W. Maalej, D. Lo, Explaining expla-
+      nation: An empirical study on explanation in code reviews, arXiv preprint
+      arXiv:2311.09020 (2023).
+
+[19] T. Rose, Towards Understanding What Factors Affect Pull Request Merges,
+      Ph.D. thesis, Carleton University, 2017.
+
+[20] S. Khatoonabadi, A. Abdellatif, D. E. Costa, E. Shihab, Predicting the first
+      response latency of maintainers and contributors in pull requests, IEEE
+      Transactions on Software Engineering (2024).
+
+[21] S. Khatoonabadi, D. E. Costa, R. Abdalkareem, E. Shihab, On wasted
+      contributions: Understanding the dynamics of contributor-abandoned pull
+      requests--a mixed-methods study of 10 large open-source projects, ACM
+      Transactions on Software Engineering and Methodology 32 (2023) 1-39.
+
+[22] M. Vijayvergiya, M. Salawa, I. Budiseli´c, D. Zheng, P. Lamblin,
+      M. Ivankovi´c, J. Carin, M. Lewko, J. Andonov, G. Petrovi´c, et al., Ai-
+      assisted assessment of coding practices in modern code review, in: Pro-
+      ceedings of the 1st ACM International Conference on AI-Powered Software,
+      2024, pp. 85-93.
+
+[23] Y. Yu, G. Rong, H. Shen, H. Zhang, D. Shao, M. Wang, Z. Wei, Y. Xu,
+      J. Wang, Fine-tuning large language models to improve accuracy and com-
+      prehensibility of automated code review, ACM Transactions on Software
+      Engineering and Methodology (2024).
+
+[24] H. Hao, K. A. Hasan, H. Qin, M. Macedo, Y. Tian, S. H. Ding, A. E.
+      Hassan, An empirical study on developers' shared conversations with chat-
+      gpt in github pull requests and issues, Empirical Software Engineering 29
+      (2024) 150.
+
+                                                  28
+[25] J. K. Das, S. Mondal, C. Roy, Investigating the utility of chatgpt in the
+      issue tracking system: An exploratory study, in: Proceedings of the 21st
+      International Conference on Mining Software Repositories, 2024, pp. 217-
+      221.
+
+[26] Github rest api documentation, 2024. URL: https://docs.github.com/
+      en/rest?apiVersion=2022-11-28.
+
+[27] dciborow, Pull request #43, 2023. URL: https://github.com/
+      microsoft/gpt-review/pull/43/, accessed on: Oct. 28, 2024.
+
+[28] onasito, Pull request #64, 2024. URL: https://github.com/onasito/
+      Group-5/pull/64, accessed on: Oct. 28, 2024.
+
+[29] Rbx2Source, Pull request #16, 2024. URL: https://github.com/
+      LockpickInteractive/Rbx2Source/pull/16, accessed on: Oct. 28, 2024.
+
+[30] meowstatus, Pull request #1, 2024. URL: https://github.com/
+      aludmilagdev/meow_status/pull/1, accessed on: Oct. 28, 2024.
+
+[31] H. Borges, M. T. Valente, What's in a github star? understanding reposi-
+      tory starring practices in a social coding platform, Journal of Systems and
+      Software 146 (2018) 112-129.
+
+[32] D. Jurafsky, J. H. Martin, Speech and Language Processing (3rd
+      ed. draft), Draft online version, 2023. https://web.stanford.edu/
+      ~jurafsky/slp3/3.pdf.
+
+[33] GitHub, Rest api endpoints for timeline events, 2022. URL: https://
+      docs.github.com/en/rest/issues/timeline?apiVersion=2022-11-28,
+      accessed on: Oct. 28, 2024.
+
+[34] M. Malkauthekar, Analysis of euclidean distance and manhattan distance
+      measure in face recognition, in: Third International Conference on Compu-
+      tational Intelligence and Information Technology (CIIT 2013), IET, 2013,
+      pp. 503-507.
+
+[35] X. Ye, Y. Zheng, W. Aljedaani, M. W. Mkaouer, Recommending pull
+      request reviewers based on code changes, Soft Computing 25 (2021) 5619-
+      5632.
+
+[36] Q. Liu, B. Shepherd, C. Li, Presiduals: An r package for residual
+      analysis using probability-scale residuals, Journal of Statistical Soft-
+      ware 94 (2020) 1-27. URL: https://www.jstatsoft.org/index.php/
+      jss/article/view/v094i12. doi:10.18637/jss.v094.i12.
+
+[37] Q. Guo, J. Cao, X. Xie, S. Liu, X. Li, B. Chen, X. Peng, Exploring the
+      potential of chatgpt in automated code refinement: An empirical study, in:
+      Proceedings of the 46th IEEE/ACM International Conference on Software
+      Engineering, 2024, pp. 1-13.
+
+                                                  29
+[38] M. Watanabe, Y. Kashiwa, B. Lin, T. Hirao, K. Yamaguchi, H. Iida, On
+      the use of chatgpt for code review: Do developers like reviews by chatgpt?,
+      in: Proceedings of the 28th International Conference on Evaluation and
+      Assessment in Software Engineering, 2024, pp. 375-380.
+
+[39] G. James, D. Witten, T. Hastie, R. Tibshirani, et al., An introduction to
+      statistical learning, volume 112, Springer, 2013.
+
+[40] D. A. N. d. Silva, D. M. Soares, S. A. Gonc¸alves, Measuring unique changes:
+      How do distinct changes affect the size and lifetime of pull requests?, in:
+      Proceedings of the 14th Brazilian Symposium on Software Components,
+      Architectures, and Reuse, 2020, pp. 121-130.
+
+[41] J. H. Bernardo, D. A. da Costa, U. Kulesza, Studying the impact of adopt-
+      ing continuous integration on the delivery time of pull requests, in: Pro-
+      ceedings of the 15th International Conference on Mining Software Reposi-
+      tories, 2018, pp. 131-141.
+
+[42] F. E. Szabo, The linear algebra survival guide, 2015. URL: https://doi.
+      org/10.1016/B978-0-12-409520-5.50020-5.
+
+[43] N. Nachar, et al., The mann-whitney u: A test for assessing whether
+      two independent samples come from the same distribution, Tutorials in
+      quantitative Methods for Psychology 4 (2008) 13-20.
+
+[44] C. Feng, H. Wang, N. Lu, T. Chen, H. He, Y. Lu, X. M. Tu, Log-
+      transformation and its implications for data analysis., Shanghai archives
+      of psychiatry 26 (2014) 105-109.
+
+[45] S. Nakagawa, P. C. Johnson, H. Schielzeth, The coefficient of determi-
+      nation r 2 and intra-class correlation coefficient from generalized linear
+      mixed-effects models revisited and expanded, Journal of the Royal Society
+      Interface 14 (2017) 20170213.
+
+[46] D. Chavalarias, J. D. Wallach, A. H. T. Li, J. P. Ioannidis, Evolution of
+      reporting p values in the biomedical literature, 1990-2015, Jama 315 (2016)
+      1141-1148.
+
+[47] H. B. Mann, D. R. Whitney, On a test of whether one of two random
+      variables is stochastically larger than the other, The annals of mathematical
+      statistics (1947) 50-60.
+
+[48] alshedivat, Pull request #2059, 2018. URL: https://github.com/
+      alshedivat/al-folio/pull/2059, accessed on: Oct. 28, 2024.
+
+[49] qiyunzhu, Pull request #1858, 2023. URL: https://github.com/
+      scikit-bio/scikit-bio/pull/1858#issuecomment-1583219957, ac-
+      cessed on: Oct. 28, 2024.
+
+                                                  30
+[50] JohnBeres, Pull request #188, 2023. URL: https://github.com/flaree/
+      flare-cogs/pull/188, accessed on: Oct. 28, 2024.
+
+[51] haileyschoelkopf, Pull request #1171, 2023. URL: https://github.com/
+      EleutherAI/lm-evaluation-harness/pull/1171, accessed on: Oct. 28,
+      2024.
+
+[52] islxyqwe, Pull request #238, 2023. URL: https://github.com/Kanaries/
+      graphic-walker/pull/238, accessed on: Oct. 28, 2024.
+
+[53] alexander cit, Pull request #4616, 2023. URL: https://github.com/
+      CitizenLabDotCo/citizenlab/pull/4616#issuecomment-1514994078,
+      accessed on: Oct. 28, 2024.
+
+[54] trackleft, Pull request #3108, 2024. URL: https://github.com/
+      az-digital/az_quickstart/pull/3109#issuecomment-1901093471, ac-
+      cessed on: Oct. 28, 2024.
+
+[55] rudolfolah, Pull request #109, 2023. URL: https://github.com/
+      rhasspy/piper/pull/109, accessed on: Oct. 28, 2024.
+
+[56] potiuk, Pull request #28300, 2022. URL: https://github.com/apache/
+      airflow/pull/28300, accessed on: Oct. 28, 2024.
+
+[57] cloud26, Pull request #36, 2023. URL: https://github.com/
+      codedog-ai/codedog/pull/36, accessed on: Oct. 28, 2024.
+
+[58] okotek, Pull request #736, 2024. URL: https://github.com/Codium-ai/
+      pr-agent/pull/736, accessed on: Oct. 28, 2024.
+
+[59] rusackas, Pull request #27905, 2024. URL: https://github.com/apache/
+      superset/pull/27905, accessed on: Oct. 28, 2024.
+
+[60] yceballost, Pull request #1122, 2023. URL: https://github.com/
+      Telefonica/mistica-design/pull/1122, accessed on: Oct. 28, 2024.
+
+[61] clearlysid, Pull request #31, 2024. URL: https://github.com/
+      helmerapp/micro/pull/31, accessed on: Oct. 28, 2024.
+
+                                                  31
+

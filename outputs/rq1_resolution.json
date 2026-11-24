@@ -1,0 +1,18 @@
+{
+  "n_total": 2404,
+  "n_gpt": 1368,
+  "n_control": 1036,
+  "median_gpt_hours": 20.845,
+  "median_control_hours": 51.713,
+  "median_difference_gpt_minus_control": -30.868000000000002,
+  "mann_whitney_U": 571287.0,
+  "mann_whitney_p": 3.67396787791919e-16,
+  "bootstrapped_median_difference_ci95": [
+    -28.683025000000004,
+    -14.012325000000002
+  ],
+  "matched_pairs": 1368,
+  "regression_log1p_is_gpt_coefficient": -0.6599792171898942,
+  "regression_log1p_is_gpt_p": 4.889626217211346e-17,
+  "model_r_squared": 0.13957531050855665
+}

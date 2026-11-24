@@ -1,0 +1,42 @@
+{
+  "query": "How do embeddings, vector similarity, and RAG support code review evidence retrieval?",
+  "model": "local TF-IDF sparse vector index",
+  "metric": "cosine similarity",
+  "results": [
+    {
+      "rank": 1,
+      "score": 0.11400634803803206,
+      "source": "oa_vector_database.txt",
+      "chunk": 13,
+      "text": "often chunked before being vectorized Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 30 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Example: The features for a house image could be.. Each dimension (number), represents a different feature of the house Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 31 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Vector Embedding Generation | Your Way AI Vector Search offers 4 alternatives for vector embedding generation 1 Use 2 Use an external 3 Use an external 4 Use a database Pre-created embedding embedding resident embeddings cloud-service library in the embedding model mid-tier Load vectors directly Generate embeddings Generate embeddings from external files using external callouts Generate embeddings into"
+    },
+    {
+      "rank": 2,
+      "score": 0.10496846680168417,
+      "source": "oa_vector_database.txt",
+      "chunk": 30,
+      "text": "of Oracle and/or its 62 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. AI Vector Search in Oracle Database Powers Complete Gen AI Pipeline, 2 of 4 Retrieval Augmented-Generation (RAG) with your enterprise data Find Related Data AI Vector Search finds private database data that matches the user's vector including product info and other support tickets for the same laptop Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 63 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. AI Vector Search in Oracle Database Powers Complete Gen AI Pipeline, 3 of 4 Retrieval Augmented-Generation (RAG) with your enterprise data Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Augment Prompt Introduction to Vector Search with Oracle Database 23ai The user's question is augmented with this private data Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL"
+    },
+    {
+      "rank": 3,
+      "score": 0.10247972077177499,
+      "source": "oa_vector_database.txt",
+      "chunk": 17,
+      "text": "trademarks of Oracle and/or its 38 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Vector Indexes Vector indexes enable rapid similarity search within tables containing vector data An exhaustive search for top-K Vector indexes trade-off matches will be100% accurate but slow as data volumes grow some search accuracy for 100x speed up Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 39 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Indexing Vectors Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 40 affiliates. Other names may be trademarks of their respective owners. Vector Indexes in Oracle Database 23ai Vector indexes in Oracle Database 23ai are specialized index structures designed to efficiently support vector search--finding and ranking data based on the similarity of AI embeddings, rather than just exact matches or"
+    },
+    {
+      "rank": 4,
+      "score": 0.10179481732179699,
+      "source": "oa_vector_database.txt",
+      "chunk": 32,
+      "text": "- Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 66 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Example of One-Shot RAG limitations Complex questions such as \"Does my plan include braces and how much is the deductible?\" can be answered badly by one- shot RAG E.g., If the LLM bases its answers on the document for the vision plan instead of the dental plan and hallucinates using other irrelevant material With Agentic RAG, the application performs a series of LLM interactions and data retrievals Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 67 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Step 1: Decompose user question into multiple sub-questions Example using Agentic RAG a) What are the user's plans Type: Data Retrieval b) Do any of"
+    },
+    {
+      "rank": 5,
+      "score": 0.09975159772557869,
+      "source": "oa_vector_database.txt",
+      "chunk": 0,
+      "text": "Introduction to Vector Search with Oracle Database 23ai Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its affiliates. Other names may be trademarks of their respective owners. Objectives This lesson covers the following objectives: What are Vectors How AI Vector Search Works Generating and Searching Vectors Vector Indexes Retrieval Augmented Generation (RAG) Agentic RAG Integration Academy Bytes - Artificial Intelligence (AI) - Hands on Labs - Intermediate Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 3 Introduction to Vector Search with Oracle Database 23ai affiliates. Other names may be trademarks of their respective owners. Vectors Copyright 2025, Oracle and/or its affiliates. Oracle, Java, MySQL and NetSuite are registered trademarks of Oracle and/or its 4 affiliates. Other names may be trademarks of their respective owners. What is a Vector, 1 of 2 A vector is a set of numbers that represents something A vector lives in a vector space which can have many dimensions Academy Bytes - Artificial Intelligence (AI) - Hands"
+    }
+  ]
+}
